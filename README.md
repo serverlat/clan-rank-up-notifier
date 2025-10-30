@@ -72,4 +72,4 @@ This would notify you when a member passes 30 days and is still a Recruit, or pa
 ## Developer
 
 Written for RuneLite by **serverlat**.  
-Source code is licensed under the MIT License.
+Source code is licensed under the BSD 2-Clause License.
