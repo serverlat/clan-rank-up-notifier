@@ -42,6 +42,7 @@ public class ClanRankUpNotifierPlugin extends Plugin
     @Inject private ClientToolbar clientToolbar;
     @Inject private ClanRankUpNotifierConfig config;
     @Inject private ScheduledExecutorService scheduler;
+    @Inject private ConfigManager configManager;
 
     private ClanRankUpNotifierPanel panel;
     private NavigationButton navButton;
@@ -52,6 +53,7 @@ public class ClanRankUpNotifierPlugin extends Plugin
     private final Map<String, String> notifiedToday = new HashMap<>();
     private volatile Set<String> eligibleRanksSet = Set.of();
     private volatile Set<String> ignoredUsersSet   = Set.of();
+    private volatile boolean muteNotifications = true;
     private LocalDate lastNotificationDate = null;
 
     @Provides
@@ -60,7 +62,7 @@ public class ClanRankUpNotifierPlugin extends Plugin
     @Override
     protected void startUp()
     {
-        panel = new ClanRankUpNotifierPanel(this::runManualCheck);
+        panel = new ClanRankUpNotifierPanel(this::runManualCheck, this::ignoreUserFromPanel);
 
         BufferedImage icon = null;
         try { icon = ImageUtil.loadImageResource(ClanRankUpNotifierPlugin.class, "icon.png"); }
@@ -110,7 +112,41 @@ public class ClanRankUpNotifierPlugin extends Plugin
 
         eligibleRanksSet = csvToLowerSet(config.eligibleRanks());
         ignoredUsersSet  = csvToLowerSet(config.ignoredUsers());
+        muteNotifications = config.muteNotifications();
     }
+
+    private void ignoreUserFromPanel(String name)
+    {
+        if (name == null || name.isBlank()) return;
+
+        String n = name.trim();
+
+        clientThread.invokeLater(() ->
+        {
+            String current = config.ignoredUsers();
+            Set<String> set = new java.util.LinkedHashSet<>(); // stable order
+
+            if (current != null && !current.isBlank())
+            {
+                for (String p : current.split(","))
+                {
+                    String t = p.trim();
+                    if (!t.isEmpty()) set.add(t);
+                }
+            }
+
+            boolean exists = set.stream().anyMatch(x -> x.equalsIgnoreCase(n));
+            if (!exists) set.add(n);
+
+            String updated = String.join(", ", set);
+
+            configManager.setConfiguration("clanrankupnotifier", "ignorelist", updated);
+
+            parseRules();
+            checkRosterAndNotify();
+        });
+    }
+
 
     private static Set<String> csvToLowerSet(String s) {
         if (s == null) return Set.of();
@@ -209,7 +245,7 @@ public class ClanRankUpNotifierPlugin extends Plugin
 
             due.add(String.format("%s,%d,%s,%s", name, days, targetRankName, currentRankName));
             final String last = notifiedToday.get(name);
-            if (!Objects.equals(last, targetRankName)) {
+            if (!Objects.equals(last, targetRankName) && !muteNotifications) {
                 notifier.notify(String.format(
                         "[Clan Rank] %s is %d days in clan → due for %s (current: %s)",
                         name, days, targetRankName, currentRankName));

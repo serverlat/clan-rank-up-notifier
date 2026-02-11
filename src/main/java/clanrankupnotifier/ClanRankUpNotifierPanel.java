@@ -9,6 +9,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class ClanRankUpNotifierPanel extends PluginPanel
 {
@@ -20,9 +22,12 @@ public class ClanRankUpNotifierPanel extends PluginPanel
     private final JPanel content = new JPanel();
     private final JLabel infoLabel = new JLabel();
     private final JButton runButton = new JButton("Update");
+    private final Consumer<String> onIgnoreUser;
 
-    public ClanRankUpNotifierPanel(Runnable onRunCheck)
+    public ClanRankUpNotifierPanel(Runnable onRunCheck, Consumer<String> onIgnoreUser)
     {
+        this.onIgnoreUser = onIgnoreUser;
+
         setLayout(new BorderLayout(0, 4));
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -174,7 +179,6 @@ public class ClanRankUpNotifierPanel extends PluginPanel
         nextRank =  parts.length > 2 ? parts[2].trim() : "?";
         currentRank = parts.length > 3 ? parts[3].trim() : "?";
 
-
         JPanel row = new JPanel();
         row.setLayout(new BoxLayout(row, BoxLayout.X_AXIS));
         row.setOpaque(true);
@@ -182,6 +186,7 @@ public class ClanRankUpNotifierPanel extends PluginPanel
         row.setBorder(new EmptyBorder(4, 6, 4, 6));
 
         final Color base = row.getBackground();
+        String finalName = name;
         row.addMouseListener(new java.awt.event.MouseAdapter()
         {
             @Override public void mouseEntered(java.awt.event.MouseEvent e) { row.setBackground(base.brighter()); }
@@ -200,12 +205,50 @@ public class ClanRankUpNotifierPanel extends PluginPanel
         row.add(nextRankLabel);
         row.add(Box.createHorizontalGlue());
 
+        Supplier<JPopupMenu> menu = () -> buildMemberMenu(finalName);
+        installPopup(row, menu);
+        installPopup(nameLabel, menu);
+        installPopup(daysLabel, menu);
+        installPopup(currentRankLabel, menu);
+        installPopup(nextRankLabel, menu);
+
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
         wrapper.add(row, BorderLayout.CENTER);
         wrapper.add(new JSeparator(JSeparator.HORIZONTAL), BorderLayout.SOUTH);
         wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, wrapper.getPreferredSize().height));
         return wrapper;
+    }
+
+    private void installPopup(JComponent c, java.util.function.Supplier<JPopupMenu> menuSupplier)
+    {
+        c.addMouseListener(new java.awt.event.MouseAdapter()
+        {
+            @Override public void mousePressed (java.awt.event.MouseEvent e) { maybe(e); }
+            @Override public void mouseReleased(java.awt.event.MouseEvent e) { maybe(e); }
+
+            private void maybe(java.awt.event.MouseEvent e)
+            {
+                if (!e.isPopupTrigger()) return;
+
+                JPopupMenu menu = menuSupplier.get();
+                if (menu == null || menu.getComponentCount() == 0) return;
+
+                menu.show(e.getComponent(), e.getX(), e.getY());
+                e.consume();
+            }
+        });
+    }
+
+    private JPopupMenu buildMemberMenu(final String memberName)
+    {
+        JPopupMenu menu = new JPopupMenu();
+        JMenuItem ignore = new JMenuItem("Ignore " + memberName);
+        ignore.addActionListener(ev -> {
+            if (onIgnoreUser != null) onIgnoreUser.accept(memberName);
+        });
+        menu.add(ignore);
+        return menu;
     }
 
     private JLabel makeCell(String text, int width, Color fg) {

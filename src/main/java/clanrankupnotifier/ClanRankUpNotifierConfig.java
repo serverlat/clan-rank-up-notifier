@@ -52,9 +52,9 @@ public interface ClanRankUpNotifierConfig extends Config
     }
 
     @ConfigItem(
-            keyName = "notifyOnLogin",
-            name = "Notify on login",
-            description = "Notifies about rank-ups due on login."
+            keyName = "muteNotifications",
+            name = "Mute notifications",
+            description = "Check if you'd like to mute notifications about due rank-ups. Set to true by default."
     )
-    default boolean notifyOnLogin() { return true; }
+    default boolean muteNotifications() { return true; }
 }
