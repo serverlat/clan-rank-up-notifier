@@ -13,6 +13,7 @@ A plugin that checks your clan members’ join dates and notifies you when they 
 - **Desktop notifications** - optional pop-ups for newly eligible members.
 - **Compact table UI** - shows name, days in clan, current rank, and next eligible rank.
 - **Ignore lists** - ignores manually configured user list
+- **Right-click ignore** – Right-click a member in the panel and select Ignore [name] to add them directly to the ignored users list.
 ---
 
 ## Configuration
@@ -24,7 +25,7 @@ Open the plugin settings in RuneLite and adjust:
 | **Eligible current ranks** | Only members whose current rank matches one of these (comma-separated) will be checked. Leave empty to include all. |
 | **Rank rules** | Define thresholds in days and target ranks. Example:<br>`7=Recruit`<br>`30=Corporal`<br>`60=Sergeant` |
 | **Ignored users** | Comma-separated list of usernames to skip. |
-| **Notify on login** | Sends a quick test notification when logging in to confirm that the plugin works. |
+| **Mute notifications** | Enabled by default. When enabled, suppresses all rank-up notifications. When disabled, notifications are shown on login and whenever a member crosses a rank threshold. |
 
 ---
 
@@ -33,7 +34,7 @@ Open the plugin settings in RuneLite and adjust:
 1. The plugin reads join dates for all clan members.
 2. It compares each member’s days-in-clan to the configured rule table.
 3. If their current rank doesn’t match the required rank for their time, and they’re not ignored, they appear in the sidebar list.
-4. You’ll get a RuneLite notification the first time each member becomes eligible each day.
+4. Notifications are triggered based on your **Mute notifications** setting.
 
 ---
 
